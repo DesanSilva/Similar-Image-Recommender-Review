@@ -1,0 +1,509 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+		T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+	
+	\title{A Critical Review of ``Probabilistic Unsupervised Machine Learning Approach for a Similar Image Recommender System for E-Commerce"}
+	
+	\author{\IEEEauthorblockN{A.K.S.D.U. Silva}
+		\IEEEauthorblockA{\textit{Department of Data Science,} \\
+			\textit{National Institute of Business}\\
+			\textit{Management}\\
+			Colombo, Sri Lanka \\
+			COHNDDS251F-023@student.nibm.lk}
+		\and
+		\IEEEauthorblockN{D.R.M. Ludwick}
+		\IEEEauthorblockA{\textit{Department of Data Science,} \\
+			\textit{National Institute of Business}\\
+			\textit{Management}\\
+			Colombo, Sri Lanka \\
+			COHNDDS251F-027@student.nibm.lk}
+		\and
+		\IEEEauthorblockN{H.M.C.H. Pinnakumbura}
+		\IEEEauthorblockA{\textit{Department of Data Science,} \\
+			\textit{National Institute of Business}\\
+			\textit{Management}\\
+			Colombo, Sri Lanka \\
+			COHNDDS251F-004@student.nibm.lk}
+	}
+	
+	\maketitle
+	
+	\begin{abstract}
+		This paper presents a critical review of "Probabilistic Unsupervised Machine Learning Approach for a Similar Image Recommender System for E-Commerce" by Addagarla and Amalanathan (2020). The reviewed work proposes a machine learning-based approach combining Principal Component Analysis through Partial Singular Value Decomposition (PSVD) for dimensionality reduction and K-Means++ clustering for similar product recommendations in e-commerce. The methodology, experimental design, and performance evaluation of the proposed system are the critically reviewed. The effectiveness of the PCA-SVD transformation in reducing dimensionality, the appropriateness of K-Means++ clustering with optimal amount of clusters, and the use of Manhattan distance for similarity measurement is analyzed. The comparative analysis with five alternative clustering algorithms is evaluated, and the limitations acknowledged by the authors are discussed, particularly regarding image orientation sensitivity. This critical assessment provides insights into the strengths and potential improvements of unsupervised learning approaches for visual product recommendation systems.
+	\end{abstract}
+	
+	\begin{IEEEkeywords}
+		component, formatting, style, styling, insert
+	\end{IEEEkeywords}
+		
+	\section{Introduction}
+	
+	The proliferation of e-commerce platforms has fundamentally transformed consumer shopping behavior, with image-based product discovery emerging as a critical component of the user experience. The paper under review proposes a probabilistic unsupervised machine learning framework for similar image recommendations in e-commerce contexts, specifically targeting fashion products. This approach addresses the inherent limitations of text-based search systems by leveraging visual feature similarity through dimensionality reduction and clustering techniques as follows.
+	
+	\subsection{Principal Component Analysis through Singular Value Decomposition}
+	
+	Principal Component Analysis represents a fundamental technique for dimensionality reduction through orthogonal transformation. While the conventional approach utilizes eigenvalue decomposition of the covariance matrix, the paper adopts Singular Value Decomposition for computational efficiency.
+	
+	For a centered data matrix $\mathbf{X} \in \mathbb{R}^{n \times p}$, where $n$ represents the number of samples and $p$ denotes the feature dimensionality, the SVD factorization is expressed as:
+	
+	\begin{equation}
+		\mathbf{X} = \mathbf{U}_{n \times m} \mathbf{\Sigma}_{n \times p} \mathbf{V}^T_{p \times p}
+	\end{equation}
+	
+	where $\mathbf{U}$ contains the left singular vectors corresponding to the observation space, $\mathbf{\Sigma}$ is a diagonal matrix of singular values $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_p \geq 0$, and $\mathbf{V}$ comprises the right singular vectors representing the principal component directions in feature space.
+	
+	The data centering operation is implemented through mean subtraction:
+	
+	\begin{equation}
+		\mathbf{X}_{centered} = \mathbf{X} - \boldsymbol{\mu}
+	\end{equation}
+	
+	where $\boldsymbol{\mu} = \frac{1}{n}\sum_{i=1}^{n} \mathbf{x}_i$ represents the feature-wise mean vector.
+	
+	The principal components are derived from the columns of $\mathbf{V}$, with the explained variance for the $k$-th component being proportional to $\sigma_k^2$. The cumulative explained variance ratio, defined as:
+	
+	\begin{equation}
+		\text{CVR}(k) = \frac{\sum_{i=1}^{k} \sigma_i^2}{\sum_{i=1}^{p} \sigma_i^2}
+	\end{equation}
+	
+	determines the number of components to retain.
+	
+	The dimensionality-reduced representation is obtained through projection onto the reduced basis:
+	
+	\begin{equation}
+		\mathbf{X}_{reduced} = \mathbf{X}_{centered} \mathbf{V}_{:,1:k}
+	\end{equation}
+	
+	This transformation maintains the essential variance structure while substantially reducing computational complexity for subsequent clustering operations. The implementation verified that reconstruction via the inverse transformation:
+	
+	\begin{equation}
+		\mathbf{X}_{reconstructed} = \mathbf{X}_{reduced} \mathbf{V}_{:,1:k}^T + \boldsymbol{\mu}
+	\end{equation}
+	
+	preserves the visual characteristics necessary for similarity assessment, as demonstrated through visual inspection of reconstructed images.
+	
+	\subsection{K-means++ Clustering Algorithm}
+	
+	Following dimensionality reduction, the methodology employs K-means++ clustering to partition the transformed feature space into coherent groups of similar products. This algorithm addresses the initialization sensitivity inherent in standard K-means through a probabilistic seeding strategy.
+	
+	The K-means objective function seeks to minimize within-cluster sum of squared distances:
+	
+	\begin{equation}
+		\underset{\mathbf{C}}{\arg\min} \sum_{i=1}^{K} \sum_{\mathbf{x} \in S_i} \|\mathbf{x} - \boldsymbol{\mu}_i\|^2
+	\end{equation}
+	
+	where $K$ denotes the number of clusters, $S_i$ represents the set of points assigned to cluster $i$, and $\boldsymbol{\mu}_i$ is the centroid of cluster $i$.
+	
+	The K-means++ initialization procedure enhances convergence through distance-weighted probabilistic selection:
+	
+	\begin{enumerate}
+		\item Select the first centroid $\mathbf{c}_1$ uniformly at random from the dataset
+		\item For each subsequent centroid $\mathbf{c}_j$ where $j = 2, \ldots, K$:
+		\begin{equation}
+			d_i = \max_{j=1}^{m} \|\mathbf{x}_i - \mathbf{c}_j\|^2
+		\end{equation}
+		\item Sample $\mathbf{c}_{m+1}$ from the data points with probability proportional to $d_i^2$
+	\end{enumerate}
+	
+	This probabilistic seeding strategy ensures initial centroids are well-distributed across the feature space, typically reducing the number of iterations required for convergence.
+	
+	The assignment step assigns each point to its nearest centroid using Euclidean distance:
+	
+	\begin{equation}
+		d(\mathbf{p}, \mathbf{q}) = \sqrt{\sum_{j=1}^{d}(q_j - p_j)^2}
+	\end{equation}
+	
+	The update step recomputes centroids as the mean of assigned points:
+	
+	\begin{equation}
+		\mathbf{c}_i = \frac{1}{|S_i|} \sum_{\mathbf{x} \in S_i} \mathbf{x}
+	\end{equation}
+	
+	The implementation employed the elbow method to determine the optimal number of clusters by analyzing inertia (within-cluster sum of squares) across cluster numbers ranging from 8 to 16, ultimately selecting $K = 16$ as the optimal configuration.
+	
+	\subsection{Cluster Evaluation Metrics}
+	
+	Given the unsupervised nature of the clustering task where ground truth labels are unavailable, the methodology employs three complementary internal validation metrics to assess cluster quality.
+	
+	The Silhouette Coefficient measures both cohesion and separation for each sample:
+	
+	\begin{equation}
+		s(i) = \begin{cases}
+			\frac{b(i) - a(i)}{\max\{a(i), b(i)\}} & \text{if } |C_i| > 1 \\
+			0 & \text{if } |C_i| = 1
+		\end{cases}
+	\end{equation}
+	
+	where $a(i)$ represents the mean intra-cluster distance for sample $i$, and $b(i)$ denotes the mean nearest-cluster distance. The coefficient ranges from $-1$ to $+1$, with higher values indicating better-defined clusters.
+	
+	The Calinski-Harabasz Index evaluates the ratio of between-cluster to within-cluster variance:
+	
+	\begin{equation}
+		\text{CH} = \frac{\text{tr}(\mathbf{B}_K)}{\text{tr}(\mathbf{W}_K)} \times \frac{n - K}{K - 1}
+	\end{equation}
+	
+	where $\mathbf{B}_K$ represents the between-cluster dispersion matrix and $\mathbf{W}_K$ denotes the within-cluster dispersion matrix. Higher values indicate better cluster separation.
+	
+	The Davies-Bouldin Index quantifies the average similarity ratio between each cluster and its most similar cluster:
+	
+	\begin{equation}
+		\text{DB} = \frac{1}{K} \sum_{i=1}^{K} \max_{j \neq i} \left( \frac{s_i + s_j}{d_{ij}} \right)
+	\end{equation}
+	
+	where $s_i$ represents the average distance of points in cluster $i$ to its centroid, and $d_{ij}$ is the distance between cluster centroids. Lower values indicate better clustering, with zero representing perfect separation.
+	
+	\subsection{Similarity Measurement and Recommendation}
+	
+	The final recommendation stage employs Manhattan distance (L1 norm) to quantify similarity between the query image and candidate products within the identified cluster:
+	
+	\begin{equation}
+		d_{\text{Manhattan}}(\mathbf{x}, \mathbf{y}) = \sum_{i=1}^{d} |x_i - y_i|
+	\end{equation}
+	
+	The top-$N$ recommendations are retrieved by ranking cluster members according to ascending Manhattan distance from the query image in the reduced feature space.
+	
+	The implementation extends this baseline by comparing K-means++ against five alternative clustering algorithms: MiniBatch K-means, K-Medoids, Agglomerative Clustering, BIRCH \cite{zhang1996birch}, and Gaussian Mixture Models \cite{reynolds2009gaussian}. Performance evaluation across these methods provides empirical validation of the proposed approach's superiority in terms of cluster quality metrics while also documenting computational wall time for each algorithm component. 
+	
+	\section{Summary of paper}
+
+	The paper by Addagarla and Amalanathan (2020) \cite{addagarla2020probabilistic} presents a probabilistic unsupervised machine learning approach for building a similar image recommender system tailored for e-commerce platforms. The study addresses the limitations of traditional text-based search by leveraging visual features of product images. The core methodology involves a two-stage process: dimensionality reduction using Principal Component Analysis through Singular Value Decomposition (PSVD), followed by clustering with the K-means++ algorithm to group visually similar items. The final recommendations are generated by computing similarity within these clusters using the Manhattan distance metric.
+
+	\subsection{Problems Addressed}
+	The primary problem addressed is the inadequacy of text-based search systems in e-commerce for product discovery. Such systems often fail to capture essential visual attributes like color, pattern, texture, and shape, leading to suboptimal recommendations. The paper posits that an image-based similarity search can provide a more intuitive and effective user experience, particularly in visually-driven domains like fashion. The research aims to develop an unsupervised framework that can automatically organize a large corpus of product images into meaningful clusters without relying on manual labels, thereby enabling efficient retrieval of visually similar products.
+
+	\subsection{Datasets and Sources}
+	The study utilizes the "Fashion Product Images Dataset" from Kaggle \cite{fashiondataset}, which contains 44,441 product images. For the experimental analysis, a specific subset of the data was curated to ensure a balanced and manageable dataset. The preprocessing stage involved:
+	\begin{enumerate}
+	    \item \textbf{Data Cleaning}: The initial dataset was parsed to correct formatting errors and handle malformed rows.
+	    \item \textbf{Subcategory Selection}: The top 16 most frequent subcategories were identified to focus the analysis on a representative set of popular product types. These include items such as 'Tshirts', 'Shirts', 'Casual Shoes', and 'Watches'.
+	    \item \textbf{Stratified Sampling}: To create a balanced dataset and avoid biases from over-represented categories, a stratified sampling strategy was employed. From each of the top 16 subcategories, 477 images were randomly selected, resulting in a final experimental dataset of 7,632 images.
+	\end{enumerate}
+	This curated dataset provides a robust foundation for evaluating the clustering algorithms, ensuring that each subcategory has equal representation. The distribution of the original dataset is shown in Figure \ref{fig:distribution}.
+
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=\columnwidth]{img/distribution_analysis.png}}
+		\caption{Distribution of master categories and top 16 subcategories in the fashion dataset.}
+		\label{fig:distribution}
+	\end{figure}
+
+	\subsection{Methodologies}
+	The core of the proposed system is a pipeline that transforms high-dimensional image data into a structured, low-dimensional feature space suitable for efficient similarity comparison.
+
+	\subsubsection{PSVD for Dimensionality Reduction}
+	The initial step involves converting each product image into a high-dimensional vector. The images were resized to a standard resolution of $80 \times 60$ pixels and converted to RGB, resulting in a feature vector of size $80 \times 60 \times 3 = 14,400$ for each image. Given this high dimensionality, Principal Component Analysis (PCA) was employed to reduce the feature space while preserving the most significant variance.
+
+	The paper implements PCA via Singular Value Decomposition (PSVD), which is known for its numerical stability and computational efficiency compared to the traditional eigenvalue decomposition of a covariance matrix. For a centered data matrix $\mathbf{X} \in \mathbb{R}^{n \times p}$, the SVD is given by:
+	\begin{equation}
+		\mathbf{X} = \mathbf{U}\mathbf{\Sigma}\mathbf{V}^T
+	\end{equation}
+	where the columns of $\mathbf{V}$ are the principal components, from which the first two are visualize in Figure \ref{PCA} to compare similarity to the original methodology followed by \cite{}.
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=\columnwidth]{img/PCA_component_visualization.png}}
+		\caption{PCA-SVD Transformed images using 2-D visualization.}
+		\label{fig:PCA}
+	\end{figure}
+	
+	The number of components to retain is determined by the cumulative explained variance. The analysis set a threshold of 90\%, which was achieved by retaining the top 143 principal components. This resulted in a dimensionality reduction of approximately 99.01\%, significantly reducing the computational load for the subsequent clustering step. Figure \ref{fig:psvd_variance} illustrates the cumulative variance explained by the principal components.
+
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=\columnwidth]{img/PSVD_cumulative_variance_analysis.png}}
+		\caption{Cumulative explained variance of PSVD components. The 90\% variance threshold is met with 143 components.}
+		\label{fig:psvd_variance}
+	\end{figure}
+
+	The transformed feature vectors, representing the projection of the original images onto the reduced principal component space, serve as the input for the clustering algorithm.
+
+	\subsubsection{K-means++ Clustering}
+	With the dimensionality-reduced data, the K-means++ algorithm \cite{arthur2007k} was used to partition the 7,632 images into distinct clusters. K-means aims to minimize the within-cluster sum of squares (inertia). The K-means++ variant was chosen for its intelligent seeding mechanism, which helps mitigate the risk of poor convergence associated with random centroid initialization. The optimal number of clusters, $K$, was determined using the elbow method, which analyzes the trade-off between inertia and the number of clusters. The analysis indicated that $K=16$ was the optimal choice, aligning with the number of subcategories in the sampled dataset. Figure \ref{fig:elbow} shows the inertia plot used for this determination.
+
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=\columnwidth]{img/elbow_method_analysis.png}}
+		\caption{Elbow method analysis for determining the optimal number of clusters.}
+		\label{fig:elbow}
+	\end{figure}
+
+	The clustering process assigns each image to one of the 16 clusters, effectively grouping visually similar products. The resulting cluster structure was visualized using t-SNE \cite{van2008visualizing}, a non-linear dimensionality reduction technique, which confirmed the separation of clusters in a 2D space, as shown in Figure \ref{fig:tsne} below.
+
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=0.9\columnwidth]{img/t-SNE_vertical_legends.png}}
+		\caption{t-SNE visualization of the data, showing clusters on the PSVD-transformed data (top) and subcategories on the original data (bottom).}
+		\label{fig:tsne}
+	\end{figure}
+
+	\subsubsection{Similarity Measurement}
+	For a given query image, the system first identifies the cluster to which it belongs. Recommendations are then generated from within that same cluster. The similarity between the query image and other images in the cluster is measured using the Manhattan distance (L1 norm) in the 143-dimensional feature space:
+	\begin{equation}
+		d_{\text{Manhattan}}(\mathbf{x}, \mathbf{y}) = \sum_{i=1}^{d} |x_i - y_i|
+	\end{equation}
+	The images with the smallest Manhattan distance to the query image are returned as the top-N recommendations.
+
+	\subsection{Evaluation Criteria}
+	Since the clustering is unsupervised, internal validation metrics were used to evaluate the quality of the clusters without reference to ground truth labels. The paper evaluates the performance of K-means++ against five other standard clustering algorithms: MiniBatch K-means, K-Medoids, Agglomerative Clustering, Birch, and Gaussian Mixture Models (GMM). The following metrics were used:
+	\begin{itemize}
+	    \item \textbf{Silhouette Coefficient (SC)}: Measures how similar an object is to its own cluster compared to other clusters. Scores range from -1 to 1, with higher values indicating better-defined clusters.
+	    \item \textbf{Calinski-Harabasz (CH) Score}: Also known as the variance ratio criterion, it measures the ratio of between-cluster dispersion to within-cluster dispersion. Higher scores indicate denser and better-separated clusters.
+	    \item \textbf{Davies-Bouldin (DB) Index}: Measures the average similarity between each cluster and its most similar one. Lower values indicate better separation, with a score of 0 representing perfect clustering.
+	\end{itemize}
+	In addition to these quality metrics, the computational wall time for fitting each model and calculating the metrics was also recorded to assess the efficiency of each algorithm.
+
+	\subsection{Key Contributions and Findings}
+	The key contribution of the paper is the empirical validation of a PSVD and K-means++ based pipeline for fashion image recommendation. The experimental results, summarized in Table \ref{tab:perf_comparison}, demonstrate that the proposed K-means++ approach outperforms the other five clustering algorithms on two of the three key evaluation metrics.
+
+	\begin{table}[htbp]
+	\caption{Performance Comparison of Clustering Algorithms}
+	\begin{center}
+	\begin{tabular}{|l|c|c|c|}
+	\hline
+	\textbf{Clustering Algorithm} & \textbf{SC Coef.} & \textbf{CH Score} & \textbf{DB Score} \\
+	\hline
+	K-means++ & \textbf{0.1426} & \textbf{670.78} & \textbf{1.8571} \\
+	MiniBatch K-means & 0.1223 & 591.98 & 2.0880 \\
+	K-Medoids & 0.1308 & 644.44 & 1.9320 \\
+	Agglomerative & 0.1171 & 592.53 & 2.0199 \\
+	Birch & 0.1136 & 601.02 & 1.9336 \\
+	GMM & 0.0657 & 471.67 & 2.3306 \\
+	\hline
+	\end{tabular}
+	\label{tab:perf_comparison}
+	\end{center}
+	\end{table}
+
+	K-means++ achieved the highest Silhouette Coefficient (0.1426) and Calinski-Harabasz Score (670.78), and the best Davies-Bouldin Index (1.8571), indicating that it produced the most dense and well-separated clusters. The computational time analysis, presented in Table \ref{tab:time_comparison}, shows that while K-means++ is not the fastest algorithm, its fitting time is reasonable compared to more computationally intensive methods like Agglomerative Clustering and GMM.
+
+	\begin{table}[htbp]
+	\caption{Computational Wall Time of Clustering Algorithms}
+	\begin{center}
+	\begin{tabular}{|l|c|c|c|c|}
+	\hline
+	\textbf{Algorithm} & \textbf{Fitting (s)} & \textbf{SC (s)} & \textbf{CH (s)} & \textbf{DB (s)} \\
+	\hline
+	K-means++ & 1.12 & 1.90 & 0.02 & 0.02 \\
+	MiniBatch & 0.29 & 1.60 & 0.01 & 0.02 \\
+	K-Medoids & 661.10 & 1.19 & 0.01 & 0.02 \\
+	Agglomerative & 5.26 & 1.39 & 0.01 & 0.01 \\
+	Birch & 4.63 & 1.27 & 0.01 & 0.01 \\
+	GMM & 20.75 & 1.28 & 0.01 & 0.02 \\
+	\hline
+	\end{tabular}
+	\label{tab:time_comparison}
+	\end{center}
+	\end{table}
+
+	The final recommendations generated by the system, as shown in Figure \ref{fig:recommendations}, demonstrate the effectiveness of the approach in retrieving visually coherent products. The paper concludes that the combination of PSVD for efficient feature extraction and K-means++ for robust clustering provides a strong baseline for unsupervised visual recommendation systems in e-commerce.
+
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=\columnwidth]{img/top5_recommendations.png}}
+		\caption{Top-5 similar product recommendations for sample query images.}
+		\label{fig:recommendations}
+	\end{figure}
+
+	\section{Critical Review}
+
+	The research by Addagarla and Amalanathan (2020) \cite{addagarla2020probabilistic} provides a foundational unsupervised learning framework for visual-based product recommendation. This critical review assesses the paper's strengths, identifies its limitations and gaps, compares it with related works, and discusses its practical applications. The analysis is supported by empirical data generated from a thorough re-implementation and extension of the original methodology, with a focus on feature extraction techniques and the impact of different distance metrics on recommendation quality.
+
+	\subsection{Strengths of the Paper}
+	The primary strength of the paper lies in its straightforward and computationally efficient approach to a complex problem. By using a combination of PSVD and K-means++, the authors present a baseline that is both accessible and scalable for e-commerce applications.
+
+	\subsubsection{Effective Use of Unsupervised Learning}
+	The adoption of an unsupervised learning paradigm is a significant advantage. In real-world e-commerce scenarios, datasets are vast and often lack high-quality, granular labels. An unsupervised approach bypasses the need for expensive and time-consuming manual annotation, making it highly practical for large-scale industrial applications. The paper successfully demonstrates that meaningful product clusters can be derived directly from image data, providing a solid foundation for a content-based recommender system.
+
+	\subsubsection{Efficient Dimensionality Reduction}
+	The use of PSVD for dimensionality reduction is another key strength. The analysis confirms that retaining 90\% of the variance with just 143 principal components (a 99.01\% reduction) is highly effective. This drastic reduction in dimensionality significantly lowers the computational cost of the subsequent clustering and distance calculation steps without a catastrophic loss of information. The reconstructed images post-PSVD, as shown in the analysis, retain sufficient visual fidelity, confirming that the most critical features are preserved.
+
+	\subsubsection{Robust Baseline and Comparative Analysis}
+	The paper establishes a robust baseline methodology and provides a valuable comparative analysis against five other clustering algorithms. The empirical results, which show K-means++ outperforming others on key metrics like the Silhouette Coefficient and Calinski-Harabasz Score, validate the architectural choices made. This comparative approach strengthens the paper's conclusions and provides a useful reference for future research in this area.
+
+	\subsection{Limitations and Gaps}
+	Despite its strengths, the paper has several notable limitations, primarily related to the simplicity of its feature extraction method and the scope of its evaluation.
+
+	\subsubsection{Simplistic Feature Extraction}
+The most significant limitation is the feature extraction technique. By resizing images and flattening the raw RGB pixel values, the resulting feature vectors are highly sensitive to minor changes in image orientation, scale, translation, and lighting. The authors acknowledge this limitation, noting that changes in image orientation can lead to mixed product suggestions. This method fails to capture the semantic essence of the product, focusing instead on a rigid pixel-based representation.
+
+Although the method used is the most computationally efficient, it has drawbacks on accuracy, only providing 0.4973 cluster purity and other low metrics as shown in Figure \ref{fig:preprocessing} and \ref{fig:purity}.
+
+\begin{figure}[htbp]
+	\centerline{\includegraphics[width=\columnwidth]{img/clustering_metrics_comparison.png}}
+	\caption{Comparison of overall quality metrics across different feature extraction methods.}
+	\label{fig:preprocessing}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centerline{\includegraphics[width=\columnwidth]{img/cluster_purity_comparison.png}}
+	\caption{Comparison of cluster purity across different feature extraction methods.}
+	\label{fig:purity}
+\end{figure}
+
+To analyze this, a review was conducted comparing the original method against two other primitive techniques: PSVD on grayscale images and Histogram of Oriented Gradients (HOG). The results, summarized in Table \ref{tab:feature_extraction_comparison}, show that the original PSVD-RGB method is the strongest performer among these simple methods. It significantly outperforms both the grayscale and HOG approaches across all key metrics, achieving a Silhouette Score of 0.1430. The HOG method, which is often powerful for shape detection, proved to be ineffective in this context, yielding a low Silhouette Score of 0.0743.
+
+This trade-off highlights that the paper's method is not just an efficient baseline but is also the most accurate among the tested primitive techniques. The critical gap remains the omission of more advanced methods. State-of-the-art approaches often leverage deep learning models (e.g., VGG16, ResNet \cite{he2016deep}), which were not tested but represent a significant missed opportunity.
+
+\begin{table}[htbp]
+	\caption{Comparison of Feature Extraction Methods}
+	\begin{center}
+		\begin{tabular}{|l|c|c|c|}
+			\hline
+			\textbf{Method} & \textbf{Features} & \textbf{Silhouette} & \textbf{CH Score} \\
+			\hline
+			PSVD RGB (90\%) & 144 & \textbf{0.1430} & \textbf{667.89} \\
+			PSVD Grayscale (95\%) & 300 & 0.1344 & 629.36 \\
+			HOG & 1944 & 0.0743 & 262.28 \\
+			\hline
+		\end{tabular}
+		\label{tab:feature_extraction_comparison}
+	\end{center}
+\end{table}
+
+	\subsubsection{Suboptimal Choice of Distance Metric}
+	The original paper exclusively uses the Manhattan distance for similarity measurement within clusters. While computationally simple, it is not necessarily the optimal choice for high-dimensional feature spaces. A detailed analysis was performed to compare the impact of different distance metrics on recommendation quality, using metrics such as Precision@K, category consistency, and Mean Reciprocal Rank (MRR).
+
+	The results, summarized in Table \ref{tab:distance_metric_comparison}, reveal that Manhattan and Cosine similarity consistently outperform other metrics, including the commonly used Euclidean distance, across several key evaluation criteria.
+
+	\begin{table}[htbp]
+	\caption{Comparison of Distance Metrics on Recommendation Quality}
+	\begin{center}
+	\begin{tabular}{|l|c|c|c|c|}
+	\hline
+	\textbf{Metric} & \textbf{P@5} & \textbf{Consistency} & \textbf{MRR} & \textbf{Diversity} \\
+	\hline
+	Euclidean & 0.8100 & 0.9132 & 0.8889 & 12.43 \\
+	Manhattan & 0.7988 & 0.9070 & \textbf{0.8921} & 12.56 \\
+	Cosine & \textbf{0.8124} & \textbf{0.9154} & 0.8901 & 13.12 \\
+	Chebyshev & 0.7776 & 0.8962 & 0.8891 & 13.56 \\
+	Minkowski & 0.8012 & 0.9114 & 0.8867 & 12.61 \\
+	\hline
+	\end{tabular}
+	\label{tab:distance_metric_comparison}
+	\end{center}
+	\end{table}
+
+	Cosine similarity achieves the highest Precision@5 and Category Consistency, making it a strong candidate for ensuring relevant recommendations. Manhattan distance, while slightly lower on precision, provides the best Mean Reciprocal Rank (MRR), indicating it is very effective at placing the single best match at the top of the list. The original paper's choice of Manhattan distance is therefore a reasonable one, although Cosine similarity presents a compelling alternative. The visualization in Figure \ref{fig:quality_metrics} further illustrates this comparison.
+
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=\columnwidth]{img/quality_metrics_comparison.png}}
+		\caption{Comparison of overall quality metrics across different distance functions.}
+		\label{fig:quality_metrics}
+	\end{figure}
+
+	\subsubsection{Lack of External Evaluation}
+	The paper relies exclusively on internal validation metrics (SC, CH, DB) to assess cluster quality. While useful, these metrics do not necessarily correlate with the perceived quality of recommendations from a user's perspective \cite{knijnenburg2012evaluating}. The study would have been greatly strengthened by an external evaluation, such as a user study or an A/B test, to measure user satisfaction, click-through rates, or conversion rates. Without this, the practical effectiveness of the recommender system remains unverified.
+
+	\subsubsection{Statistical Robustness of Metrics}
+	While the paper reports mean scores for evaluation, it overlooks the variance and distribution of these metrics across different queries. A robust system should perform consistently well, not just on average. The analysis of score distributions, as shown in Figure \ref{fig:score_distribution}, reveals the stability of different distance metrics.
+
+	\begin{figure}[htbp]
+		\centerline{\includegraphics[width=\columnwidth]{img/score_distribution_boxplots.png}}
+		\caption{Score distribution analysis for key quality metrics across different distance functions.}
+		\label{fig:score_distribution}
+	\end{figure}
+
+	From the boxplots, it is evident that while the mean performance of Cosine similarity is the highest, its variance is also comparable to or tighter than other metrics like Euclidean and Manhattan distance. This suggests that its superior performance is not due to a few high-scoring outliers but is consistent across the test set. Chebyshev distance, in contrast, exhibits a much wider variance, particularly for Precision@5 and MRR, indicating that its performance is highly unpredictable. This level of statistical analysis is missing from the original paper but is crucial for assessing the reliability of the proposed system.
+
+	\subsection{Comparison with Related Works}
+	To contextualize the paper's contributions, it is useful to compare it with other approaches in content-based image retrieval (CBIR).
+
+	\subsubsection{Younus et al. (2015)}
+	Younus et al. proposed a CBIR system using a combination of K-means and Particle Swarm Optimization (PSO) for clustering. Their feature extraction was more sophisticated, incorporating color histograms, co-occurrence matrices, and wavelet moments. They evaluated their system on the Wang dataset using precision and recall, which are external evaluation metrics that require ground truth labels.
+
+	In comparison, the paper by Addagarla and Amalanathan \cite{addagarla2020probabilistic} uses a simpler feature extraction method (raw pixels) and relies on internal validation metrics. While the unsupervised nature of the reviewed paper is a strength, the feature extraction and evaluation methods used by Younus et al. are more robust. The use of PSO also represents an attempt to find a global optimum for the clustering problem, which can be an advantage over the locally optimal K-means.
+
+	\subsubsection{Mateen et al. (2019) \cite{mateen2019fundus}}
+	Mateen et al. developed a system for Fundus image classification using features extracted from a pre-trained VGG-19 deep learning model. They also employed dimensionality reduction techniques, including PCA and SVD, but applied them to the high-level features extracted by the CNN, not the raw pixels. Their approach achieved over 92\% accuracy in a classification task.
+
+	This work highlights the power of transfer learning and deep features. By leveraging a model pre-trained on a massive dataset like ImageNet, they were able to extract rich, semantic features that are highly discriminative. This stands in stark contrast to the pixel-based features in the reviewed paper, which lack semantic meaning. The analysis conducted in the `Feature\_Extraction\_review.ipynb` notebook, which showed deep learning features would likely be far superior, aligns with the findings of Mateen et al. and underscores the importance of deep learning in modern CBIR systems.
+
+	\subsubsection{Liu et al. (2016) \cite{liu2016recurrent}}
+	Liu et al. introduced Recurrent Recommender Networks, which leverage the sequential nature of user behavior (e.g., click history) to make recommendations. Their model uses a Recurrent Neural Network (RNN) to capture temporal dynamics in user preferences. This work represents a different paradigm of recommendation, focusing on collaborative filtering and session-based analysis rather than content-based visual similarity. While not directly comparable in methodology, it highlights the importance of incorporating user interaction data, a dimension completely absent from the purely content-based approach of the reviewed paper. A hybrid system combining the visual features from Addagarla and Amalanathan with the sequential modeling of Liu et al. could potentially yield a much more powerful and personalized recommender.
+	
+	\subsubsection{Benjelloun et al. (2023) \cite{benjelloun2023new}}
+	A more recent work by Benjelloun et al. proposes an explainable overlapping co-clustering method for recommender systems. This technique simultaneously clusters users and items, allowing for items to belong to multiple clusters (overlapping). This is particularly relevant for fashion, where a single item can belong to multiple styles or contexts (e.g., a shirt can be both "casual" and "formal"). Their focus on "explainability" also addresses a key weakness in many complex recommender systems. In contrast, the K-means approach in the reviewed paper assigns each item to a single, hard-to-interpret cluster. The co-clustering approach offers a more flexible and transparent model of the user-item relationship space.
+
+	\subsection{Practical Applications}
+	Despite its limitations, the methodology proposed in the paper has several practical applications, particularly as a baseline system in e-commerce.
+
+	\subsubsection{Visual Search and Recommendation}
+	The most direct application is in building a "shop the look" or "find similar" feature on an e-commerce website. A user can upload an image or select an existing product image, and the system can return a gallery of visually similar items. This enhances product discovery and can lead to increased user engagement and sales. Given its computational efficiency, the proposed system could be deployed as a first-pass filter, retrieving a set of candidate images that can then be re-ranked by a more computationally expensive model.
+
+	\subsubsection{Automated Product Categorization}
+	The clustering component of the methodology can be used for automated product categorization. By analyzing the dominant subcategories within each cluster, it is possible to assign new, unlabeled products to a likely category. This can help in maintaining a clean and organized product catalog, reducing the need for manual data entry.
+
+	\subsubsection{Trend Analysis and Inventory Management}
+	The clusters generated by the system can also be analyzed to identify visual trends in fashion. For example, a cluster that is growing rapidly in size might indicate a new trend (e.g., a specific color or pattern becoming popular). E-commerce platforms can use this information to inform their inventory management and marketing strategies, ensuring that popular styles are well-stocked and promoted.
+
+	In conclusion, while the paper by Addagarla and Amalanathan presents a valuable and efficient baseline, its practical utility is limited by its simplistic feature representation. The critical review and extended analysis demonstrate that incorporating deep learning features and a more suitable distance metric like Cosine similarity can lead to substantial improvements in performance, paving the way for a more robust and accurate visual recommendation system.
+
+	\section{Future Direction}
+
+	Building upon the foundational work of the reviewed paper and the insights gained from this critical analysis, several promising avenues for future research emerge. These directions aim to address the identified limitations and enhance the robustness, accuracy, and practical utility of visual recommendation systems.
+
+	\subsection{Advanced Feature Extraction}
+	The most critical area for improvement is feature extraction. The reliance on raw, flattened pixel values is a significant bottleneck. Future work should explore state-of-the-art techniques for learning rich, semantic, and invariant visual representations.
+
+	\subsubsection{Deep Learning and Transfer Learning}
+	As demonstrated in the comparative analysis, features from pre-trained Convolutional Neural Networks (CNNs) like VGG16 offer a substantial performance boost. Future research could extend this by:
+	\begin{itemize}
+	    \item \textbf{Exploring Modern Architectures}: Evaluating more recent and efficient architectures such as ResNet \cite{he2016deep}, EfficientNet \cite{tan2019efficientnet}, or Vision Transformers (ViT) \cite{dosovitskiy2020image}. These models, pre-trained on large-scale datasets like ImageNet, are capable of capturing more complex and abstract features.
+	    \item \textbf{Fine-Tuning}: Instead of using pre-trained models as fixed feature extractors, fine-tuning them on the target fashion dataset can help the model adapt to the specific visual characteristics of clothing, shoes, and accessories. This would allow the network to learn domain-specific features, potentially leading to even better performance.
+	\end{itemize}
+
+	\subsubsection{Self-Supervised and Contrastive Learning}
+	Self-supervised learning methods, such as SimCLR \cite{chen2020simple}, MoCo \cite{he2020momentum}, or BYOL, have emerged as powerful techniques for learning visual representations without relying on human-annotated labels. These methods work by creating augmented views of an image (e.g., through cropping, rotation, or color jittering) and training a model to recognize that these different views originate from the same source image. This encourages the model to learn features that are invariant to such transformations. Applying contrastive learning to the fashion dataset could produce highly robust feature extractors that are insensitive to the orientation and lighting issues that plagued the original PSVD approach.
+
+	\subsection{Metric and Multimodal Learning}
+	The choice of similarity measure is as important as the feature representation itself. Future work should move beyond standard distance metrics and explore learning a dedicated similarity function.
+
+	\subsubsection{Deep Metric Learning}
+	Instead of a two-stage approach (extract features, then cluster), deep metric learning aims to train a neural network to directly output feature embeddings where similar items are close together and dissimilar items are far apart in the embedding space. This is typically achieved using specialized loss functions like Triplet Loss (used in FaceNet \cite{schroff2015facenet}), Contrastive Loss, or ArcFace Loss \cite{deng2019arcface}. For a fashion recommender, a triplet loss function could be trained with an anchor (e.g., a shoe), a positive example (a visually similar shoe), and a negative example (e.g., a shirt). The model would learn to minimize the distance between the anchor and the positive while maximizing the distance to the negative, resulting in a highly structured and semantically meaningful embedding space.
+
+	\subsubsection{Hybrid and Multimodal Recommender Systems}
+	Visual features are just one aspect of a product. Textual descriptions, user reviews, brand information, and price are also powerful signals. A truly advanced recommender system should be multimodal, capable of integrating these different sources of information. Future research could focus on building hybrid models that combine:
+	\begin{itemize}
+	    \item \textbf{Content-Based Filtering}: Using advanced visual and textual features \cite{he2016vbpr, kang2017visually}.
+	    \item \textbf{Collaborative Filtering}: Incorporating user behavior data, such as clicks, purchases, and ratings, to leverage the "wisdom of the crowd."
+	\end{itemize}
+	Models based on graph neural networks (GNNs) \cite{wu2022graph} or multimodal transformers could be particularly effective at fusing these heterogeneous data sources to provide highly personalized and accurate recommendations.
+
+	\subsection{Improved Evaluation and User-Centric Metrics}
+	The reliance on internal clustering metrics is a major gap. Future work must incorporate more rigorous and user-centric evaluation protocols.
+	\begin{itemize}
+	    \item \textbf{External Evaluation}: Where ground truth labels are available (e.g., subcategory), external evaluation metrics like Adjusted Rand Index (ARI), Normalized Mutual Information (NMI), and Fowlkes-Mallows Score should be used to provide a more objective measure of clustering quality.
+	    \item \textbf{User Studies and A/B Testing}: The ultimate measure of a recommender system's success is user satisfaction. Controlled user studies could be conducted to gather qualitative feedback on the relevance, diversity, and novelty of recommendations. In a live production environment, A/B testing could be used to measure the impact of different recommendation algorithms on key business metrics like click-through rate (CTR), conversion rate, and average order value.
+	    \item \textbf{Beyond-Accuracy Metrics}: Recommendation quality is not just about accuracy. Metrics like diversity (how different the recommended items are from each other), novelty (how surprising or unexpected the recommendations are), and serendipity (recommending items that are both surprising and relevant) are crucial for a good user experience. Future evaluations should incorporate these metrics to provide a more holistic assessment of system performance.
+	\end{itemize}
+
+	By pursuing these future directions, the research community can build upon the simple yet effective baseline provided by Addagarla and Amalanathan to create the next generation of intelligent, accurate, and engaging visual recommendation systems.
+
+	\section{Conclusion}
+
+	This critical review has provided a comprehensive analysis of the paper "Probabilistic Unsupervised Machine Learning Approach for a Similar Image Recommender System for E-Commerce" by Addagarla and Amalanathan (2020). The review process involved a deep dive into the original methodology, a re-implementation of the core components, and an extensive evaluation of its limitations through a series of targeted experiments.
+
+	The main takeaways from this review are as follows:
+	\begin{enumerate}
+	    \item \textbf{A Solid but Simplistic Baseline}: The paper successfully presents a computationally efficient and scalable unsupervised learning pipeline for visual recommendation. The use of PSVD for dimensionality reduction and K-means++ for clustering establishes a strong and accessible baseline. The comparative analysis against other clustering algorithms provides a valuable benchmark for future work.
+	    
+	    \item \textbf{Feature Extraction is a Key Limitation}: The primary weakness of the proposed approach is its reliance on a simplistic feature representation based on raw pixel values. While our analysis showed that the paper's PSVD-RGB method is a strong performer among primitive techniques—outperforming a grayscale-based approach and being significantly more efficient than the higher-dimensional HOG method—it fails to capture rich semantic content. The decision not to explore more advanced feature extractors, such as those derived from deep learning models like VGG16, is a major gap. Such models are critical for achieving state-of-the-art performance in modern computer vision tasks.
+	    
+	    \item \textbf{The Choice of Distance Metric Matters}: The original paper's exclusive use of Manhattan distance was found to be a reasonable, though not definitively optimal, choice. A detailed comparative analysis of five different distance metrics revealed that Cosine similarity and Manhattan distance are the top performers. Cosine excels in Precision@5 and overall category consistency, while Manhattan distance achieves the highest Mean Reciprocal Rank (MRR). This indicates a nuanced trade-off rather than a single best metric, underscoring the need for careful selection based on the specific goals of the recommender (e.g., best single match vs. overall relevance).
+	    
+	    \item \textbf{The Path Forward is Clear}: The limitations identified in this review point towards clear directions for future research. The integration of advanced deep learning techniques, such as transfer learning with modern architectures \cite{tan2019efficientnet, dosovitskiy2020image}, self-supervised learning \cite{chen2020simple, he2020momentum}, and deep metric learning \cite{schroff2015facenet, deng2019arcface}, is essential for building more accurate and robust systems. Furthermore, the development of hybrid, multimodal models that fuse visual data with textual information and user behavior \cite{wu2022graph} will be key to delivering truly personalized recommendations. Finally, a shift towards more user-centric and beyond-accuracy evaluation metrics is necessary to measure the true practical impact of these systems.
+	\end{enumerate}
+
+	In summary, the work by Addagarla and Amalanathan serves as a valuable starting point in the domain of unsupervised visual recommendation. However, the rapid advancements in deep learning and representation learning offer powerful tools to overcome its limitations. By embracing these more sophisticated techniques, the field can move towards creating recommender systems that not only understand the content of an image but also grasp the nuances of style, context, and user intent.
+
+	\section*{Acknowledgment}
+
+	he authors would like to express their deepest gratitude to the instructors and staff of the National Institute of Business Management (NIBM) for their invaluable guidance and continuous support throughout the course of this research project. In particular, the authors wish to extend their heartfelt appreciation to Professor D.D.A. Arthanayake, whose insightful feedback, expertise, and encouragement were instrumental in shaping the direction and quality of this study.
+
+
+	\bibliographystyle{IEEEtran}
+\bibliography{bibliography}
+
+\end{document}
